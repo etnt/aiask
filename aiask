@@ -1,0 +1,9 @@
+#!/bin/sh 
+
+# It is a wrapper around the aiask.py script.
+# Modify the paths below to match your setup.
+# Move the script to a directory in your PATH.
+# Make the script executable.
+
+(cd $HOME/git/aiask; ./venv/bin/python3 aiask.py "$@")
+

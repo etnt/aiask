@@ -37,5 +37,5 @@ AI Response:
 The capital of Cameroon is Yaoundé. 
 ```
 
-<img src="fibionacci.png" alt="Fibionacci" width="500" /> 
+<img src="fibionacci.png" alt="Fibionacci" width="800" /> 
 

@@ -50,9 +50,10 @@ def format_code_blocks(text):
         lines = code.split('\n')
         max_length = max(len(line) for line in lines)
 
+
         formatted = f"{CYAN}{'=' * (max_length + 4)}{RESET}\n"
         for line in lines:
-            formatted += f"{CYAN}| {BLUE}{line.ljust(max_length)}{CYAN} |{RESET}\n"
+            formatted += f"{BLUE}{line.ljust(max_length)}{RESET}\n"
         formatted += f"{CYAN}{'=' * (max_length + 4)}{RESET}"
 
         return f"\n{formatted}\n"

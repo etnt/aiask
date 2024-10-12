@@ -1,11 +1,11 @@
 # aiask.py: Your AI-Powered Copilot
 
-`aiask.py` is a simple command-line tool that leverages OpenAI's API to mimic that the
+`aiask.py` is a simple command-line tool that leverages OpenAI's API to mimic the
 githubs `gh copilot` command line tool. 
 
 ## Features
 
-*   Generates anserws to your coding prompts and questions using OpenAI's language models.
+*   Generates answers to your coding prompts and questions using OpenAI's language models.
 *   Simple , with no bells and whistles.
 *   Uses `litellm` for easy interaction with the OpenAI API.
 
@@ -36,4 +36,6 @@ AI Response:
 
 The capital of Cameroon is Yaoundé. 
 ```
+
+<img src="fibionacci.png" alt="Fibionacci" width="500" /> 
 

@@ -7,21 +7,45 @@ import itertools
 import threading
 import time
 import shutil
+import argparse
 from pygments import highlight
 from pygments.lexers import get_lexer_by_name, guess_lexer
 from pygments.formatters import Terminal256Formatter
 from pygments.util import ClassNotFound
 
-try:
-    openai_api_key = os.getenv("OPENAI_API_KEY")
-    if not openai_api_key:
-        raise ValueError("OPENAI_API_KEY environment variable not set.")
-except ValueError as e:
-    print(f"Error: {e}")
-    sys.exit(1)
+def parse_arguments():
+    parser = argparse.ArgumentParser(description="AI Assistant with multiple provider options")
+    parser.add_argument("prompt", nargs="+", help="Your question or prompt for the AI")
+    parser.add_argument("--openai", action="store_true", help="Use OpenAI provider")
+    parser.add_argument("--anthropic", action="store_true", help="Use Anthropic provider")
+    parser.add_argument("--gemini", action="store_true", help="Use Gemini provider")
+    parser.add_argument("--openrouter", action="store_true", help="Use OpenRouter provider")
+    return parser.parse_args()
 
-# Set your OpenAI API key
-litellm.api_key = openai_api_key
+def select_provider(args):
+    openai_api_key = os.getenv("OPENAI_API_KEY")
+    anthropic_api_key = os.getenv("ANTHROPIC_API_KEY")
+    gemini_api_key = os.getenv("GEMINI_API_KEY")
+    openrouter_api_key = os.getenv("OPENROUTER_API_KEY")
+
+    if args.openai and openai_api_key:
+        return "gpt-4", openai_api_key
+    elif args.anthropic and anthropic_api_key:
+        return "anthropic/claude-3-5-sonnet-20240620", anthropic_api_key
+    elif args.gemini and gemini_api_key:
+        return "gemini/gemini-1.5-flash", gemini_api_key
+    elif args.openrouter and openrouter_api_key:
+        return "openrouter/anthropic/claude-3.5-sonnet", openrouter_api_key
+    elif openai_api_key:
+        return "gpt-4", openai_api_key
+    elif anthropic_api_key:
+        return "anthropic/claude-3-5-sonnet-20240620", anthropic_api_key
+    elif gemini_api_key:
+        return "gemini/gemini-1.5-flash", gemini_api_key
+    elif openrouter_api_key:
+        return "openrouter/anthropic/claude-3.5-sonnet", openrouter_api_key
+    else:
+        raise ValueError("No valid API key found. Please set an environment variable for one of the supported providers.")
 
 # ANSI color codes
 BLUE = "\033[34m"
@@ -69,10 +93,10 @@ def format_code_blocks(text):
 
         # Remove any trailing newline and add grey background
         highlighted_code = highlighted_code.strip()
-        
+
         # Get terminal width
         terminal_width, _ = shutil.get_terminal_size()
-        
+
         # Pad each line to terminal width
         highlighted_lines = []
         for line in highlighted_code.split('\n'):
@@ -80,7 +104,7 @@ def format_code_blocks(text):
             clean_line = re.sub(r'\x1b\[[0-9;]*m', '', line)
             padding = ' ' * (terminal_width - len(clean_line.rstrip()))
             highlighted_lines.append(f"{GREY_BACKGROUND}{line.rstrip()}{padding}{RESET}")
-        
+
         highlighted_code_with_background = '\n'.join(highlighted_lines)
 
         return f"{GREY_BACKGROUND}{highlighted_code_with_background}{RESET}"
@@ -89,22 +113,25 @@ def format_code_blocks(text):
     text = re.sub(r'```(\w+)?\n(.*?)\n```', replace_code_block, text, flags=re.DOTALL)
     return text
 
-def get_ai_response(prompt):
+def get_ai_response(prompt, model, api_key):
     """Gets a response from the AI based on the given prompt."""
     try:
         # Start the spinner
         spinner = Spinner()
         spinner.start()
 
+        # Set the API key
+        litellm.api_key = api_key
+
         # Get the AI response
         response = completion(
-            model="gpt-4",  # Using GPT-4 for better responses
+            model=model,
             messages=[
                 {"role": "system", "content": "You are a helpful AI assistant. When providing code examples, always use markdown code block syntax with language specification."},
                 {"role": "user", "content": prompt},
             ],
             max_tokens=500,  # Increased for more detailed responses
-            temperature=0.7,  # Adjust for creativity vs. accuracy
+            temperature=0.2,  # Adjust for creativity vs. accuracy
         )
 
         # Extract and format the response
@@ -124,15 +151,24 @@ def get_ai_response(prompt):
         return None
 
 if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        print("Usage: aiask 'Your question here'")
+    args = parse_arguments()
+    
+    if len(sys.argv) == 1:
+        print("Usage: aiask [--openai|--anthropic|--gemini|--openrouter] 'Your question here'")
+        print("If no provider is specified, the script will use the first available API key in the order: OpenAI, Anthropic, Gemini, OpenRouter")
         sys.exit(1)
 
-    user_prompt = " ".join(sys.argv[1:])
-    response = get_ai_response(user_prompt)
+    try:
+        model, api_key = select_provider(args)
+    except ValueError as e:
+        print(f"Error: {e}")
+        sys.exit(1)
+
+    user_prompt = " ".join(args.prompt)
+    response = get_ai_response(user_prompt, model, api_key)
 
     if response:
-        print("\nAI Response:")
+        print(f"\nAI Response ({model}):")
         print(f"\n{response}\n")
     else:
         print("No response could be generated.")

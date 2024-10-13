@@ -29,6 +29,8 @@ githubs `gh copilot` command line tool.
 
 ## Example
 
+Just ask any question:
+
 ```bash
 ❯ aiask what is the capital of Kamerun?
 
@@ -37,5 +39,12 @@ AI Response:
 The capital of Cameroon is Yaoundé. 
 ```
 
-<img src="fibionacci.png" alt="Fibionacci" width="800" /> 
+Syntax highlighting is supported:
+
+<img src="fibionacci.png" alt="Compute Fibionacci numbers" width="800" /> 
+
+More examples:
+
+<img src="lsockets.png" alt="Listening Sockets" width="800" /> 
+<img src="ssmac.png" alt="ss install on Mac" width="800" /> 
 

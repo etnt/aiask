@@ -73,14 +73,6 @@ If no provider is specified, the script will use the first available API key in 
    5. **Lake Malawi (Malawi, Mozambique, Tanzania):** 706 meters (2,316 feet)
    ```
 
-   This function does the following:
-   1. It handles edge cases for n <= 0, n == 1, and n == 2.
-   2. For n > 2, it initializes the sequence with [0, 1] and then calculates each subsequent number by adding the two preceding ones.
-   3. It returns the full Fibonacci sequence up to the nth number.
-
-   You can call this function with any positive integer to get the Fibonacci sequence up to that number of elements.
-   ```
-
 Syntax highlighting is supported for code blocks in the responses.
 
 <img src="fibionacci.png" alt="Compute Fibionacci numbers" width="800" />

@@ -8,6 +8,7 @@
 * Supports multiple AI providers: OpenAI, Anthropic, Google's Gemini, and OpenRouter.
 * Simple to use, with no bells and whistles.
 * Uses `litellm` for easy interaction with different AI APIs.
+* Allows customization of response length and creativity through command-line options.
 
 ## Requirements
 
@@ -39,13 +40,15 @@
 
 ## Usage
 
-You can now specify which AI provider to use with command-line options:
+You can now specify which AI provider to use with command-line options, as well as customize the response:
 
 ```bash
-aiask [--openai|--anthropic|--gemini|--openrouter] 'Your question here'
+aiask [--openai|--anthropic|--gemini|--openrouter] [--max-tokens MAX_TOKENS] [--temperature TEMPERATURE] 'Your question here'
 ```
 
-If no provider is specified, the script will use the first available API key in the order: OpenAI, Anthropic, Gemini, OpenRouter.
+- If no provider is specified, the script will use the first available API key in the order: OpenAI, Anthropic, Gemini, OpenRouter.
+- `--max-tokens`: Set the maximum number of tokens in the response (default: 500).
+- `--temperature`: Set the temperature for response generation, controlling creativity (default: 0.2, range: 0.0 to 1.0).
 
 ## Examples
 
@@ -71,6 +74,22 @@ If no provider is specified, the script will use the first available API key in 
    3. **Lake Vostok (Antarctica):** 900-1,200 meters (2,953-3,937 feet) - Note: Lake Vostok is a subglacial lake, meaning it is buried under a thick ice sheet.
    4. **Lake O'Higgins/San Martín (Chile/Argentina):** 836 meters (2,743 feet)
    5. **Lake Malawi (Malawi, Mozambique, Tanzania):** 706 meters (2,316 feet)
+   ```
+
+3. Using custom max tokens and temperature:
+   ```bash
+   ❯ aiask --openai --max-tokens 100 --temperature 0.8 "Write a short poem about coding"
+
+   AI Response (gpt-4):
+
+   In realms of logic, we create,
+   Lines of code, we orchestrate.
+   Bugs and errors, we navigate,
+   With each compile, we elevate.
+   Syntax dances, algorithms flow,
+   In this digital world we grow.
+   From simple scripts to complex schemes,
+   Coding brings life to our dreams.
    ```
 
 Syntax highlighting is supported for code blocks in the responses.

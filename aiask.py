@@ -20,6 +20,8 @@ def parse_arguments():
     parser.add_argument("--anthropic", action="store_true", help="Use Anthropic provider")
     parser.add_argument("--gemini", action="store_true", help="Use Gemini provider")
     parser.add_argument("--openrouter", action="store_true", help="Use OpenRouter provider")
+    parser.add_argument("--max-tokens", type=int, default=500, help="Maximum number of tokens in the response")
+    parser.add_argument("--temperature", type=float, default=0.2, help="Temperature for response generation (0.0 to 1.0)")
     return parser.parse_args()
 
 def select_provider(args):
@@ -113,7 +115,7 @@ def format_code_blocks(text):
     text = re.sub(r'```(\w+)?\n(.*?)\n```', replace_code_block, text, flags=re.DOTALL)
     return text
 
-def get_ai_response(prompt, model, api_key):
+def get_ai_response(prompt, model, api_key, max_tokens, temperature):
     """Gets a response from the AI based on the given prompt."""
     try:
         # Start the spinner
@@ -130,8 +132,8 @@ def get_ai_response(prompt, model, api_key):
                 {"role": "system", "content": "You are a helpful AI assistant. When providing code examples, always use markdown code block syntax with language specification."},
                 {"role": "user", "content": prompt},
             ],
-            max_tokens=500,  # Increased for more detailed responses
-            temperature=0.2,  # Adjust for creativity vs. accuracy
+            max_tokens=max_tokens,
+            temperature=temperature,
         )
 
         # Extract and format the response
@@ -154,7 +156,7 @@ if __name__ == "__main__":
     args = parse_arguments()
     
     if len(sys.argv) == 1:
-        print("Usage: aiask [--openai|--anthropic|--gemini|--openrouter] 'Your question here'")
+        print("Usage: aiask [--openai|--anthropic|--gemini|--openrouter] [--max-tokens MAX_TOKENS] [--temperature TEMPERATURE] 'Your question here'")
         print("If no provider is specified, the script will use the first available API key in the order: OpenAI, Anthropic, Gemini, OpenRouter")
         sys.exit(1)
 
@@ -165,7 +167,7 @@ if __name__ == "__main__":
         sys.exit(1)
 
     user_prompt = " ".join(args.prompt)
-    response = get_ai_response(user_prompt, model, api_key)
+    response = get_ai_response(user_prompt, model, api_key, args.max_tokens, args.temperature)
 
     if response:
         print(f"\nAI Response ({model}):")

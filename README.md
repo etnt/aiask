@@ -1,6 +1,6 @@
 # aiask.py: Your Multi-Provider AI-Powered Copilot
 
-`aiask.py` is a simple, yet powerful command-line tool that leverages multiple AI providers to mimic the GitHub Copilot command-line tool. It now supports OpenAI, Anthropic, Google's Gemini, and OpenRouter.
+`aiask.py` is a simple, yet powerful command-line tool that leverages multiple AI providers to mimic the GitHub Copilot command-line tool. It now supports OpenAI, Anthropic, Google's Gemini, OpenRouter and Sambanova.
 
 ## Features
 

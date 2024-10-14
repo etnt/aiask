@@ -20,6 +20,7 @@ def parse_arguments():
     parser.add_argument("--anthropic", action="store_true", help="Use Anthropic provider")
     parser.add_argument("--gemini", action="store_true", help="Use Gemini provider")
     parser.add_argument("--openrouter", action="store_true", help="Use OpenRouter provider")
+    parser.add_argument("--sambanova", action="store_true", help="Use SambaNova provider")
     parser.add_argument("--max-tokens", type=int, default=500, help="Maximum number of tokens in the response")
     parser.add_argument("--temperature", type=float, default=0.2, help="Temperature for response generation (0.0 to 1.0)")
     return parser.parse_args()
@@ -29,6 +30,7 @@ def select_provider(args):
     anthropic_api_key = os.getenv("ANTHROPIC_API_KEY")
     gemini_api_key = os.getenv("GEMINI_API_KEY")
     openrouter_api_key = os.getenv("OPENROUTER_API_KEY")
+    sambanova_api_key = os.getenv("SAMBANOVA_API_KEY")
 
     if args.openai and openai_api_key:
         return "gpt-4", openai_api_key
@@ -38,6 +40,8 @@ def select_provider(args):
         return "gemini/gemini-1.5-flash", gemini_api_key
     elif args.openrouter and openrouter_api_key:
         return "openrouter/anthropic/claude-3.5-sonnet", openrouter_api_key
+    elif args.sambanova and sambanova_api_key:
+        return "sambanova/Meta-Llama-3.1-70B-Instruct", sambanova_api_key
     elif openai_api_key:
         return "gpt-4", openai_api_key
     elif anthropic_api_key:
@@ -46,6 +50,8 @@ def select_provider(args):
         return "gemini/gemini-1.5-flash", gemini_api_key
     elif openrouter_api_key:
         return "openrouter/anthropic/claude-3.5-sonnet", openrouter_api_key
+    elif sambanova_api_key:
+        return "sambanova/Meta-Llama-3.1-70B-Instruct", sambanova_api_key
     else:
         raise ValueError("No valid API key found. Please set an environment variable for one of the supported providers.")
 
@@ -141,7 +147,9 @@ def get_ai_response(prompt, model, api_key, max_tokens, temperature):
         formatted_response = format_code_blocks(ai_response)
 
         # Extract cost information
-        cost = response._hidden_params["response_cost"]
+        cost = response._hidden_params.get("response_cost", 0.0)
+        if cost is None:
+            cost = 0.0
 
         # Stop the spinner
         spinner.stop()

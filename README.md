@@ -5,7 +5,7 @@
 ## Features
 
 * Generates answers to your coding prompts and questions using various AI language models.
-* Supports multiple AI providers: OpenAI, Anthropic, Google's Gemini, and OpenRouter.
+* Supports multiple AI providers: OpenAI, Anthropic, Google's Gemini, OpenRouter and Sambanova
 * Simple to use, with no bells and whistles.
 * Uses `litellm` for easy interaction with different AI APIs.
 * Allows customization of response length and creativity through command-line options.
@@ -28,6 +28,7 @@
    - Anthropic: https://www.anthropic.com/
    - Google (for Gemini): https://aistudio.google.com//
    - OpenRouter: https://openrouter.ai/
+   - Sambanova: https://cloud.sambanova.ai/
 
 3. **Set API Keys:** Add the following lines to your `~/.bashrc` (or similar) for each provider you want to use:
    ```bash
@@ -35,6 +36,7 @@
    export ANTHROPIC_API_KEY=your_anthropic_api_key
    export GEMINI_API_KEY=your_gemini_api_key
    export OPENROUTER_API_KEY=your_openrouter_api_key
+   export SAMBANOVAS_API_KEY=your_sambanova_api_key
    ```
 
 4. **Use the aiask script:** Modify the paths in the `aiask` script to match your setup. Move the script to a directory in your PATH. Make the script executable (`chmod +x aiask`).
@@ -44,10 +46,10 @@
 You can now specify which AI provider to use with command-line options, as well as customize the response:
 
 ```bash
-aiask [--openai|--anthropic|--gemini|--openrouter] [--max-tokens MAX_TOKENS] [--temperature TEMPERATURE] 'Your question here'
+aiask [--openai|--anthropic|--gemini|--openrouter|--sambanova] [--max-tokens MAX_TOKENS] [--temperature TEMPERATURE] 'Your question here'
 ```
 
-- If no provider is specified, the script will use the first available API key in the order: OpenAI, Anthropic, Gemini, OpenRouter.
+- If no provider is specified, the script will use the first available API key in the order: OpenAI, Anthropic, Gemini, OpenRouter, Sambanova.
 - `--max-tokens`: Set the maximum number of tokens in the response (default: 500).
 - `--temperature`: Set the temperature for response generation, controlling creativity (default: 0.2, range: 0.0 to 1.0).
 

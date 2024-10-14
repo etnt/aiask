@@ -61,7 +61,6 @@ aiask [--openai|--anthropic|--gemini|--openrouter] [--max-tokens MAX_TOKENS] [--
 
    The capital of Cameroon is Yaoundé.
 
-   Request cost: $0.000123
    ```
 
 2. Specifying a provider:
@@ -78,7 +77,6 @@ aiask [--openai|--anthropic|--gemini|--openrouter] [--max-tokens MAX_TOKENS] [--
    4. **Lake O'Higgins/San Martín (Chile/Argentina):** 836 meters (2,743 feet)
    5. **Lake Malawi (Malawi, Mozambique, Tanzania):** 706 meters (2,316 feet)
 
-   Request cost: $0.000045
    ```
 
 3. Using custom max tokens and temperature:
@@ -96,7 +94,6 @@ aiask [--openai|--anthropic|--gemini|--openrouter] [--max-tokens MAX_TOKENS] [--
    From simple scripts to complex schemes,
    Coding brings life to our dreams.
 
-   Request cost: $0.000234
    ```
 
 Syntax highlighting is supported for code blocks in the responses.

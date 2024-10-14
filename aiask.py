@@ -140,21 +140,24 @@ def get_ai_response(prompt, model, api_key, max_tokens, temperature):
         ai_response = response.choices[0].message.content.strip()
         formatted_response = format_code_blocks(ai_response)
 
+        # Extract cost information
+        cost = response._hidden_params["response_cost"]
+
         # Stop the spinner
         spinner.stop()
 
         # Clear the spinner line
         print('\r' + ' ' * 80 + '\r', end='', flush=True)
 
-        return formatted_response
+        return formatted_response, cost
 
     except Exception as e:
         print(f"Error getting AI response: {e}")
-        return None
+        return None, 0
 
 if __name__ == "__main__":
     args = parse_arguments()
-    
+
     if len(sys.argv) == 1:
         print("Usage: aiask [--openai|--anthropic|--gemini|--openrouter] [--max-tokens MAX_TOKENS] [--temperature TEMPERATURE] 'Your question here'")
         print("If no provider is specified, the script will use the first available API key in the order: OpenAI, Anthropic, Gemini, OpenRouter")
@@ -167,10 +170,10 @@ if __name__ == "__main__":
         sys.exit(1)
 
     user_prompt = " ".join(args.prompt)
-    response = get_ai_response(user_prompt, model, api_key, args.max_tokens, args.temperature)
+    response, cost = get_ai_response(user_prompt, model, api_key, args.max_tokens, args.temperature)
 
     if response:
-        print(f"\nAI Response ({model}):")
+        print(f"\nAI Response (model: {model} , cost: ${cost:.6f}):")
         print(f"\n{response}\n")
     else:
         print("No response could be generated.")

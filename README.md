@@ -9,6 +9,7 @@
 * Simple to use, with no bells and whistles.
 * Uses `litellm` for easy interaction with different AI APIs.
 * Allows customization of response length and creativity through command-line options.
+* Displays the cost of each API request, helping you track usage and expenses.
 
 ## Requirements
 
@@ -56,16 +57,18 @@ aiask [--openai|--anthropic|--gemini|--openrouter] [--max-tokens MAX_TOKENS] [--
    ```bash
    ❯ aiask 'What is the capital of Cameroon?'
 
-   AI Response (gpt-4):
+   AI Response (model: gpt-4 , cost: $0.001740):
 
    The capital of Cameroon is Yaoundé.
+
+   Request cost: $0.000123
    ```
 
 2. Specifying a provider:
    ```bash
    ❯ aiask --gemini "List the five deepest lakes in the world." 
 
-   AI Response (gemini/gemini-1.5-flash):
+   AI Response (model: gemini/gemini-1.5-flash , cost: $0.000054):
 
    Here are the five deepest lakes in the world, along with their approximate depths: 
 
@@ -74,13 +77,15 @@ aiask [--openai|--anthropic|--gemini|--openrouter] [--max-tokens MAX_TOKENS] [--
    3. **Lake Vostok (Antarctica):** 900-1,200 meters (2,953-3,937 feet) - Note: Lake Vostok is a subglacial lake, meaning it is buried under a thick ice sheet.
    4. **Lake O'Higgins/San Martín (Chile/Argentina):** 836 meters (2,743 feet)
    5. **Lake Malawi (Malawi, Mozambique, Tanzania):** 706 meters (2,316 feet)
+
+   Request cost: $0.000045
    ```
 
 3. Using custom max tokens and temperature:
    ```bash
    ❯ aiask --openai --max-tokens 100 --temperature 0.8 "Write a short poem about coding"
 
-   AI Response (gpt-4):
+   AI Response (model: gpt-4 , cost: $0.007170):
 
    In realms of logic, we create,
    Lines of code, we orchestrate.
@@ -90,6 +95,8 @@ aiask [--openai|--anthropic|--gemini|--openrouter] [--max-tokens MAX_TOKENS] [--
    In this digital world we grow.
    From simple scripts to complex schemes,
    Coding brings life to our dreams.
+
+   Request cost: $0.000234
    ```
 
 Syntax highlighting is supported for code blocks in the responses.

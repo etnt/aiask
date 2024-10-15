@@ -99,7 +99,7 @@ aiask [--openai|--anthropic|--gemini|--openrouter|--sambanova] [--save-code] [--
 
    ```
 
-Syntax highlighting is supported for code blocks in the responses as well as the possibility to save to code to file.
+Syntax highlighting is supported for code blocks in the responses as well as the possibility to save the code to file.
 
 <img src="save-code.png" alt="Compute Fibionacci numbers" width="800" />
 

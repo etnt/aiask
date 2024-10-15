@@ -23,6 +23,7 @@ def parse_arguments():
     parser.add_argument("--sambanova", action="store_true", help="Use SambaNova provider")
     parser.add_argument("--max-tokens", type=int, default=500, help="Maximum number of tokens in the response")
     parser.add_argument("--temperature", type=float, default=0.2, help="Temperature for response generation (0.0 to 1.0)")
+    parser.add_argument("--save-code", action="store_true", help="Prompt to save code blocks to a file")
     return parser.parse_args()
 
 def select_provider(args):
@@ -157,17 +158,39 @@ def get_ai_response(prompt, model, api_key, max_tokens, temperature):
         # Clear the spinner line
         print('\r' + ' ' * 80 + '\r', end='', flush=True)
 
-        return formatted_response, cost
+        # Extract code blocks
+        code_blocks = re.findall(r'```(\w+)?\n(.*?)\n```', ai_response, re.DOTALL)
+
+        return formatted_response, cost, code_blocks
 
     except Exception as e:
         print(f"Error getting AI response: {e}")
-        return None, 0
+        return None, 0, []
+
+def save_code_to_file(code_blocks):
+    """Prompts the user for a filename and saves the code blocks to that file."""
+    if not code_blocks:
+        print("No code blocks found to save.")
+        return
+
+    filename = input("Enter a filename to save the code: ").strip()
+    if not filename:
+        print("No filename provided. Code will not be saved.")
+        return
+
+    with open(filename, 'w') as f:
+        for language, code in code_blocks:
+            if language:
+                f.write(f"# Language: {language}\n")
+            f.write(f"{code.strip()}\n\n")
+
+    print(f"Code has been saved to {filename}")
 
 if __name__ == "__main__":
     args = parse_arguments()
 
     if len(sys.argv) == 1:
-        print("Usage: aiask [--openai|--anthropic|--gemini|--openrouter] [--max-tokens MAX_TOKENS] [--temperature TEMPERATURE] 'Your question here'")
+        print("Usage: aiask [--openai|--anthropic|--gemini|--openrouter] [--max-tokens MAX_TOKENS] [--temperature TEMPERATURE] [--save-code] 'Your question here'")
         print("If no provider is specified, the script will use the first available API key in the order: OpenAI, Anthropic, Gemini, OpenRouter")
         sys.exit(1)
 
@@ -178,11 +201,14 @@ if __name__ == "__main__":
         sys.exit(1)
 
     user_prompt = " ".join(args.prompt)
-    response, cost = get_ai_response(user_prompt, model, api_key, args.max_tokens, args.temperature)
+    response, cost, code_blocks = get_ai_response(user_prompt, model, api_key, args.max_tokens, args.temperature)
 
     if response:
         print(f"\nAI Response (model: {model} , cost: ${cost:.6f}):")
         print(f"\n{response}\n")
+
+        if args.save_code and code_blocks:
+            save_code_to_file(code_blocks)
     else:
         print("No response could be generated.")
 

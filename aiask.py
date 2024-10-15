@@ -144,7 +144,13 @@ def get_ai_response(prompt, model, api_key, max_tokens, temperature):
         )
 
         # Extract and format the response
-        ai_response = response.choices[0].message.content.strip()
+        try:
+            ai_response = response.choices[0].message.content.strip()
+        except AttributeError:
+            ai_response = "No response was returned."
+        except Exception as e: #catch other unexpected errors
+            ai_response = f"An error occurred: {e}"
+
         formatted_response = format_code_blocks(ai_response)
 
         # Extract cost information

@@ -12,6 +12,10 @@ from pygments import highlight
 from pygments.lexers import get_lexer_by_name, guess_lexer
 from pygments.formatters import Terminal256Formatter
 from pygments.util import ClassNotFound
+from colorama import init as init_colorama
+from colorama import Fore, Style, Back
+
+init_colorama()
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description="AI Assistant with multiple provider options")
@@ -24,6 +28,7 @@ def parse_arguments():
     parser.add_argument("--max-tokens", type=int, default=500, help="Maximum number of tokens in the response")
     parser.add_argument("--temperature", type=float, default=0.2, help="Temperature for response generation (0.0 to 1.0)")
     parser.add_argument("--save-code", action="store_true", help="Prompt to save code blocks to a file")
+    parser.add_argument('--wd', metavar='directory', default=".", type=str, help='Specify the working directory')
     return parser.parse_args()
 
 def select_provider(args):
@@ -116,7 +121,8 @@ def format_code_blocks(text):
 
         highlighted_code_with_background = '\n'.join(highlighted_lines)
 
-        return f"{GREY_BACKGROUND}{highlighted_code_with_background}{RESET}"
+        #return f"{GREY_BACKGROUND}{highlighted_code_with_background}{RESET}"
+        return f"{Back.LIGHTBLACK_EX}{highlighted_code_with_background}{Style.RESET_ALL}"
 
     # Replace code blocks
     text = re.sub(r'```(\w+)?\n(.*?)\n```', replace_code_block, text, flags=re.DOTALL)
@@ -173,24 +179,25 @@ def get_ai_response(prompt, model, api_key, max_tokens, temperature):
         print(f"Error getting AI response: {e}")
         return None, 0, []
 
-def save_code_to_file(code_blocks):
+def save_code_to_file(code_blocks, working_directory="."):
     """Prompts the user for a filename and saves the code blocks to that file."""
     if not code_blocks:
         print("No code blocks found to save.")
         return
 
-    filename = input("Enter a filename to save the code: ").strip()
+    filename = input(f"{Style.BRIGHT}{Fore.YELLOW}{Back.RED}Enter a filename to save the code:{Style.RESET_ALL} ").strip() 
     if not filename:
         print("No filename provided. Code will not be saved.")
         return
 
-    with open(filename, 'w') as f:
+    full_filename = os.path.join(working_directory, filename)
+    with open(full_filename, 'w') as f:
         for language, code in code_blocks:
             if language:
                 f.write(f"# Language: {language}\n")
             f.write(f"{code.strip()}\n\n")
 
-    print(f"Code has been saved to {filename}")
+    print(f"Code has been saved to {full_filename}")
 
 if __name__ == "__main__":
     args = parse_arguments()
@@ -199,6 +206,11 @@ if __name__ == "__main__":
         print("Usage: aiask [--openai|--anthropic|--gemini|--openrouter] [--max-tokens MAX_TOKENS] [--temperature TEMPERATURE] [--save-code] 'Your question here'")
         print("If no provider is specified, the script will use the first available API key in the order: OpenAI, Anthropic, Gemini, OpenRouter")
         sys.exit(1)
+
+    # Check that the given working directory exists
+    if not os.path.exists(args.wd):
+        print(f"Error: The specified working directory '{args.wd}' does not exist.")
+        sys.exit(1)    
 
     try:
         model, api_key = select_provider(args)
@@ -214,7 +226,7 @@ if __name__ == "__main__":
         print(f"\n{response}\n")
 
         if args.save_code and code_blocks:
-            save_code_to_file(code_blocks)
+            save_code_to_file(code_blocks, args.wd)
     else:
         print("No response could be generated.")
 

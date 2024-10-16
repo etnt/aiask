@@ -5,5 +5,7 @@
 # Move the script to a directory in your PATH.
 # Make the script executable.
 
-(cd $HOME/git/aiask; ./venv/bin/python3 aiask.py "$@")
+WORKING_DIR=`pwd`
+
+(cd $HOME/git/aiask; ./venv/bin/python3 aiask.py --wd $WORKING_DIR "$@")
 

@@ -25,6 +25,7 @@ def parse_arguments():
     parser.add_argument("--gemini", action="store_true", help="Use Gemini provider")
     parser.add_argument("--openrouter", action="store_true", help="Use OpenRouter provider")
     parser.add_argument("--sambanova", action="store_true", help="Use SambaNova provider")
+    parser.add_argument("--mistral", action="store_true", help="Use Mistral provider")
     parser.add_argument("--max-tokens", type=int, default=500, help="Maximum number of tokens in the response")
     parser.add_argument("--temperature", type=float, default=0.2, help="Temperature for response generation (0.0 to 1.0)")
     parser.add_argument("--save-code", action="store_true", help="Prompt to save code blocks to a file")
@@ -37,6 +38,7 @@ def select_provider(args):
     gemini_api_key = os.getenv("GEMINI_API_KEY")
     openrouter_api_key = os.getenv("OPENROUTER_API_KEY")
     sambanova_api_key = os.getenv("SAMBANOVA_API_KEY")
+    mistral_api_key = os.getenv("MISTRAL_API_KEY")
 
     if args.openai and openai_api_key:
         return "gpt-4", openai_api_key
@@ -48,6 +50,8 @@ def select_provider(args):
         return "openrouter/anthropic/claude-3.5-sonnet", openrouter_api_key
     elif args.sambanova and sambanova_api_key:
         return "sambanova/Meta-Llama-3.1-70B-Instruct", sambanova_api_key
+    elif args.mistral and mistral_api_key:
+        return "mistral/mistral-large-latest", mistral_api_key
     elif openai_api_key:
         return "gpt-4", openai_api_key
     elif anthropic_api_key:
@@ -58,6 +62,8 @@ def select_provider(args):
         return "openrouter/anthropic/claude-3.5-sonnet", openrouter_api_key
     elif sambanova_api_key:
         return "sambanova/Meta-Llama-3.1-70B-Instruct", sambanova_api_key
+    elif mistral_api_key:
+        return "mistral/mistral-large-latest", mistral_api_key
     else:
         raise ValueError("No valid API key found. Please set an environment variable for one of the supported providers.")
 
@@ -203,14 +209,14 @@ if __name__ == "__main__":
     args = parse_arguments()
 
     if len(sys.argv) == 1:
-        print("Usage: aiask [--openai|--anthropic|--gemini|--openrouter] [--max-tokens MAX_TOKENS] [--temperature TEMPERATURE] [--save-code] 'Your question here'")
-        print("If no provider is specified, the script will use the first available API key in the order: OpenAI, Anthropic, Gemini, OpenRouter")
+        print("Usage: aiask [--openai|--anthropic|--gemini|--openrouter|--sambanova|--mistral] [--max-tokens MAX_TOKENS] [--temperature TEMPERATURE] [--save-code] 'Your question here'")
+        print("If no provider is specified, the script will use the first available API key in the order: OpenAI, Anthropic, Gemini, OpenRouter, Sambanova, Mistral")
         sys.exit(1)
 
     # Check that the given working directory exists
     if not os.path.exists(args.wd):
         print(f"Error: The specified working directory '{args.wd}' does not exist.")
-        sys.exit(1)    
+        sys.exit(1)
 
     try:
         model, api_key = select_provider(args)

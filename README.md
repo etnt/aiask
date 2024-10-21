@@ -1,6 +1,6 @@
 # aiask.py: Your Multi-Provider AI-Powered Copilot
 
-`aiask.py` is a simple, yet powerful command-line tool that leverages multiple AI providers to mimic the GitHub Copilot command-line tool. It now supports OpenAI, Anthropic, Google's Gemini, OpenRouter and Sambanova.
+`aiask.py` is a simple, yet powerful command-line tool that leverages multiple AI providers to mimic the GitHub Copilot command-line tool. It now supports OpenAI, Anthropic, Google's Gemini, OpenRouter, Sambanova and Mistral.
 
 ## Features
 
@@ -29,6 +29,7 @@
    - Google (for Gemini): https://aistudio.google.com//
    - OpenRouter: https://openrouter.ai/
    - Sambanova: https://cloud.sambanova.ai/
+   - Mistral: https://mistral.ai/
 
 3. **Set API Keys:** Add the following lines to your `~/.bashrc` (or similar) for each provider you want to use:
    ```bash
@@ -37,6 +38,7 @@
    export GEMINI_API_KEY=your_gemini_api_key
    export OPENROUTER_API_KEY=your_openrouter_api_key
    export SAMBANOVAS_API_KEY=your_sambanova_api_key
+   export MISTRAL_API_KEY=your_mistral_api_key
    ```
 
 4. **Use the aiask script:** Modify the paths in the `aiask` script to match your setup. Move the script to a directory in your PATH. Make the script executable (`chmod +x aiask`).
@@ -46,7 +48,7 @@
 You can now specify which AI provider to use with command-line options, as well as customize the response:
 
 ```bash
-aiask [--openai|--anthropic|--gemini|--openrouter|--sambanova] [--save-code] [--max-tokens MAX_TOKENS] [--temperature TEMPERATURE] [--wd WORKING_DIRECTORY] 'Your question here'
+aiask [--openai|--anthropic|--gemini|--openrouter|--sambanova|--mistral] [--save-code] [--max-tokens MAX_TOKENS] [--temperature TEMPERATURE] [--wd WORKING_DIRECTORY] 'Your question here'
 ```
 
 - If no provider is specified, the script will use the first available API key in the order: OpenAI, Anthropic, Gemini, OpenRouter, Sambanova.

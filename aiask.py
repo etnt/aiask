@@ -26,6 +26,9 @@ def parse_arguments():
     parser.add_argument("--openrouter", action="store_true", help="Use OpenRouter provider")
     parser.add_argument("--sambanova", action="store_true", help="Use SambaNova provider")
     parser.add_argument("--mistral", action="store_true", help="Use Mistral provider")
+    parser.add_argument("--ollama", action="store_true", help="Use Ollama as a local provider")
+    parser.add_argument("--model", help="Model to use")
+    parser.add_argument("--file", help="Input text file (to ask queries about)")
     parser.add_argument("--max-tokens", type=int, default=500, help="Maximum number of tokens in the response")
     parser.add_argument("--temperature", type=float, default=0.2, help="Temperature for response generation (0.0 to 1.0)")
     parser.add_argument("--save-code", action="store_true", help="Prompt to save code blocks to a file")
@@ -33,6 +36,33 @@ def parse_arguments():
     return parser.parse_args()
 
 def select_provider(args):
+    """
+    Determines the provider to use based on command-line arguments.
+    A provider is selected if its corresponding argument is True.
+    If no provider is specified, the function defaults to OpenAI.
+    A model is also selected based on the provider and command-line arguments.
+    A model can be explicitly specified using the --model argument.
+    """
+    (model, api_key) =  get_model_and_api_key(args)
+    if args.model:
+        model = args.model
+    return model, api_key
+    
+
+def get_model_and_api_key(args):
+    """
+    Determines the model and API key to use based on command-line arguments and environment variables.
+
+    Args:
+        args: Namespace object containing command-line arguments (e.g., args.openai, args.anthropic, etc.).  Assumed to have attributes corresponding to API keys (e.g., args.openai_api_key).
+
+    Returns:
+        A tuple containing the model name and API key.
+
+    Raises:
+        ValueError: If no valid API key is found.
+    """
+
     openai_api_key = os.getenv("OPENAI_API_KEY")
     anthropic_api_key = os.getenv("ANTHROPIC_API_KEY")
     gemini_api_key = os.getenv("GEMINI_API_KEY")
@@ -40,32 +70,28 @@ def select_provider(args):
     sambanova_api_key = os.getenv("SAMBANOVA_API_KEY")
     mistral_api_key = os.getenv("MISTRAL_API_KEY")
 
-    if args.openai and openai_api_key:
-        return "gpt-4", openai_api_key
-    elif args.anthropic and anthropic_api_key:
-        return "anthropic/claude-3-5-sonnet-20240620", anthropic_api_key
-    elif args.gemini and gemini_api_key:
-        return "gemini/gemini-1.5-flash", gemini_api_key
-    elif args.openrouter and openrouter_api_key:
-        return "openrouter/anthropic/claude-3.5-sonnet", openrouter_api_key
-    elif args.sambanova and sambanova_api_key:
-        return "sambanova/Meta-Llama-3.1-70B-Instruct", sambanova_api_key
-    elif args.mistral and mistral_api_key:
-        return "mistral/mistral-large-latest", mistral_api_key
-    elif openai_api_key:
-        return "gpt-4", openai_api_key
-    elif anthropic_api_key:
-        return "anthropic/claude-3-5-sonnet-20240620", anthropic_api_key
-    elif gemini_api_key:
-        return "gemini/gemini-1.5-flash", gemini_api_key
-    elif openrouter_api_key:
-        return "openrouter/anthropic/claude-3.5-sonnet", openrouter_api_key
-    elif sambanova_api_key:
-        return "sambanova/Meta-Llama-3.1-70B-Instruct", sambanova_api_key
-    elif mistral_api_key:
-        return "mistral/mistral-large-latest", mistral_api_key
-    else:
-        raise ValueError("No valid API key found. Please set an environment variable for one of the supported providers.")
+    # Define a dictionary mapping providers to good default model names and API keys
+    api_key_options = {
+        "openai": ("gpt-4", openai_api_key),
+        "anthropic": ("anthropic/claude-3-5-sonnet-20240620", anthropic_api_key),
+        "gemini": ("gemini/gemini-1.5-flash", gemini_api_key),
+        "openrouter": ("openrouter/anthropic/claude-3.5-sonnet", openrouter_api_key),
+        "sambanova": ("sambanova/Meta-Llama-3.1-70B-Instruct", sambanova_api_key),
+        "mistral": ("mistral/mistral-large-latest", mistral_api_key),
+    }
+
+    for provider, (model, api_key) in api_key_options.items():
+        if getattr(args, provider):  # Check if the provider flag was set
+            if api_key:
+                return model, api_key
+
+    # Check for API keys without provider flags being explicitly set
+    for provider, (model, api_key) in api_key_options.items():
+        if api_key:
+            return model, api_key
+
+    raise ValueError("No valid API key found. Please set an environment variable for one of the supported providers.")
+
 
 # ANSI color codes
 BLUE = "\033[34m"
@@ -127,57 +153,79 @@ def format_code_blocks(text):
 
         highlighted_code_with_background = '\n'.join(highlighted_lines)
 
-        #return f"{GREY_BACKGROUND}{highlighted_code_with_background}{RESET}"
         return f"{Back.LIGHTBLACK_EX}{highlighted_code_with_background}{Style.RESET_ALL}"
 
     # Replace code blocks
     text = re.sub(r'```(\w+)?\n(.*?)\n```', replace_code_block, text, flags=re.DOTALL)
     return text
 
-def get_ai_response(prompt, model, api_key, max_tokens, temperature):
+def format_response(response):
+    # Extract and format the response
+    try:
+        ai_response = response.choices[0].message.content.strip()
+    except AttributeError:
+        ai_response = "No response was returned."
+    except Exception as e: #catch other unexpected errors
+        ai_response = f"An error occurred: {e}"
+
+    return format_code_blocks(ai_response)
+
+def get_ai_response(prompt, model, api_key, max_tokens, temperature, context):
     """Gets a response from the AI based on the given prompt."""
     try:
+
         # Start the spinner
         spinner = Spinner()
         spinner.start()
+        if model.startswith("ollama/"):
+            response = completion(
+                model=model,
+                messages=[
+                    {"role": "system",
+                     "content": 
+                     f"""
+                     You are a helpful AI assistant. You may use the following context to extend your knowledge
+                     in order to aid you to answer the question at the end. Use a Chain of Thought process togenerate a response.
+                     If you don't know the answer, just say you don't know. Don't try to make up an answer.
+                     When providing code examples, always use markdown code block syntax with language specification.
 
-        # Set the API key
-        litellm.api_key = api_key
+                     Context: {context}
+                     """
+                     },
+                    {"role": "user",
+                     "content": prompt,}], 
+                api_base="http://localhost:11434",
+                max_tokens=max_tokens,
+                temperature=temperature,
+            )
+        else:
+            # Set the API key
+            litellm.api_key = api_key
+            # Get the AI response
+            response = completion(
+                model=model,
+                messages=[
+                    {"role": "system", "content": "You are a helpful AI assistant. When providing code examples, always use markdown code block syntax with language specification."},
+                    {"role": "user", "content": prompt},
+                ],
+                max_tokens=max_tokens,
+                temperature=temperature,
+            )
+        # Stop the spinner
+        spinner.stop()
 
-        # Get the AI response
-        response = completion(
-            model=model,
-            messages=[
-                {"role": "system", "content": "You are a helpful AI assistant. When providing code examples, always use markdown code block syntax with language specification."},
-                {"role": "user", "content": prompt},
-            ],
-            max_tokens=max_tokens,
-            temperature=temperature,
-        )
-
-        # Extract and format the response
-        try:
-            ai_response = response.choices[0].message.content.strip()
-        except AttributeError:
-            ai_response = "No response was returned."
-        except Exception as e: #catch other unexpected errors
-            ai_response = f"An error occurred: {e}"
-
-        formatted_response = format_code_blocks(ai_response)
+        formatted_response = format_response(response)
 
         # Extract cost information
         cost = response._hidden_params.get("response_cost", 0.0)
         if cost is None:
             cost = 0.0
 
-        # Stop the spinner
-        spinner.stop()
-
         # Clear the spinner line
         print('\r' + ' ' * 80 + '\r', end='', flush=True)
 
         # Extract code blocks
-        code_blocks = re.findall(r'```(\w+)?\n(.*?)\n```', ai_response, re.DOTALL)
+        code_blocks = re.findall(r'```(\w+)?\n(.*?)\n```', formatted_response, re.DOTALL)
 
         return formatted_response, cost, code_blocks
 
@@ -209,7 +257,7 @@ if __name__ == "__main__":
     args = parse_arguments()
 
     if len(sys.argv) == 1:
-        print("Usage: aiask [--openai|--anthropic|--gemini|--openrouter|--sambanova|--mistral] [--max-tokens MAX_TOKENS] [--temperature TEMPERATURE] [--save-code] 'Your question here'")
+        print("Usage: aiask [--openai|--anthropic|--gemini|--openrouter|--sambanova|--mistral|--ollama] [--model] [--max-tokens MAX_TOKENS] [--temperature TEMPERATURE] [--save-code] 'Your question here'")
         print("If no provider is specified, the script will use the first available API key in the order: OpenAI, Anthropic, Gemini, OpenRouter, Sambanova, Mistral")
         sys.exit(1)
 
@@ -219,21 +267,41 @@ if __name__ == "__main__":
         sys.exit(1)
 
     try:
-        model, api_key = select_provider(args)
+        if args.ollama:
+            if args.file:
+                with open(args.file, 'r') as f:
+                    context = f.read().strip()
+                    user_prompt = " ".join(args.prompt)
+            else:
+                user_prompt = " ".join(args.prompt)
+                context = ""
+            model = args.model or "ollama/qwen2.5-coder"
+            api_key = None
+        else:
+            user_prompt = " ".join(args.prompt)
+            model, api_key = select_provider(args)
+            context = ""
     except ValueError as e:
         print(f"Error: {e}")
         sys.exit(1)
 
-    user_prompt = " ".join(args.prompt)
-    response, cost, code_blocks = get_ai_response(user_prompt, model, api_key, args.max_tokens, args.temperature)
+    while True:
+        response, cost, code_blocks = get_ai_response(user_prompt, model, api_key, args.max_tokens, args.temperature, context)
 
-    if response:
-        print(f"\nAI Response (model: {model} , cost: ${cost:.6f}):")
-        print(f"\n{response}\n")
+        if response:
+            print(f"\nAI Response (model: {model} , cost: ${cost:.6f}):")
+            print(f"\n{response}\n")
 
-        if args.save_code and code_blocks:
-            save_code_to_file(code_blocks, args.wd)
-    else:
-        print("No response could be generated.")
+            if args.save_code and code_blocks:
+                save_code_to_file(code_blocks, args.wd)
+        else:
+            print("No response could be generated.")
 
-    sys.exit(0)
+        if args.ollama:
+            user_prompt = input("Enter another question (or 'quit' to exit): ")
+            if user_prompt.lower().strip() == 'quit':
+                sys.exit(0)
+            else:
+                continue
+        else:
+            sys.exit(0)

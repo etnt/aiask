@@ -2,7 +2,9 @@ import sys
 import os
 import re
 import litellm
-from litellm import completion
+from litellm import completion, aspeech
+from pathlib import Path
+import asyncio
 import itertools
 import threading
 import time
@@ -14,6 +16,8 @@ from pygments.formatters import Terminal256Formatter
 from pygments.util import ClassNotFound
 from colorama import init as init_colorama
 from colorama import Fore, Style, Back
+from pydub import AudioSegment
+from pydub.playback import play
 
 init_colorama()
 
@@ -28,6 +32,8 @@ def parse_arguments():
     parser.add_argument("--mistral", action="store_true", help="Use Mistral provider")
     parser.add_argument("--ollama", action="store_true", help="Use Ollama as a local provider")
     parser.add_argument("--model", help="Model to use")
+    parser.add_argument("--audio", action="store_true", help="Generate audio response") 
+    parser.add_argument("--play", action="store_true", help="Play audio response")
     parser.add_argument("--file", help="Input text file (to ask queries about)")
     parser.add_argument("--max-tokens", type=int, default=500, help="Maximum number of tokens in the response")
     parser.add_argument("--temperature", type=float, default=0.2, help="Temperature for response generation (0.0 to 1.0)")
@@ -47,7 +53,7 @@ def select_provider(args):
     if args.model:
         model = args.model
     return model, api_key
-    
+
 
 def get_model_and_api_key(args):
     """
@@ -170,30 +176,18 @@ def format_response(response):
 
     return format_code_blocks(ai_response)
 
-def get_ai_response(prompt, model, api_key, max_tokens, temperature, context):
+def get_ai_response(prompt, model, api_key, max_tokens, temperature, conversation_history, context):
     """Gets a response from the AI based on the given prompt."""
     try:
 
         # Start the spinner
         spinner = Spinner()
         spinner.start()
+        conversation_history.append({"role": "user", "content": prompt})
         if model.startswith("ollama/"):
             response = completion(
                 model=model,
-                messages=[
-                    {"role": "system",
-                     "content": 
-                     f"""
-                     You are a helpful AI assistant. You may use the following context to extend your knowledge
-                     in order to aid you to answer the question at the end. Use a Chain of Thought process togenerate a response.
-                     If you don't know the answer, just say you don't know. Don't try to make up an answer.
-                     When providing code examples, always use markdown code block syntax with language specification.
-
-                     Context: {context}
-                     """
-                     },
-                    {"role": "user",
-                     "content": prompt,}], 
+                messages=conversation_history,
                 api_base="http://localhost:11434",
                 max_tokens=max_tokens,
                 temperature=temperature,
@@ -204,10 +198,7 @@ def get_ai_response(prompt, model, api_key, max_tokens, temperature, context):
             # Get the AI response
             response = completion(
                 model=model,
-                messages=[
-                    {"role": "system", "content": "You are a helpful AI assistant. When providing code examples, always use markdown code block syntax with language specification."},
-                    {"role": "user", "content": prompt},
-                ],
+                messages=conversation_history,
                 max_tokens=max_tokens,
                 temperature=temperature,
             )
@@ -226,8 +217,13 @@ def get_ai_response(prompt, model, api_key, max_tokens, temperature, context):
 
         # Extract code blocks
         code_blocks = re.findall(r'```(\w+)?\n(.*?)\n```', formatted_response, re.DOTALL)
+        text_paragraphs = re.findall(r'(?s)(?!```)(.*?)(?=\n```|\Z)', formatted_response) 
 
-        return formatted_response, cost, code_blocks
+
+        # Append AI response to conversation history
+        conversation_history.append({"role": "assistant", "content": formatted_response})
+
+        return formatted_response, cost, code_blocks, text_paragraphs
 
     except Exception as e:
         print(f"Error getting AI response: {e}")
@@ -253,6 +249,29 @@ def save_code_to_file(code_blocks, working_directory="."):
 
     print(f"Code has been saved to {full_filename}")
 
+
+
+
+async def async_speech(input, audio_output_file):
+    openai_api_key = os.getenv("OPENAI_API_KEY")
+
+    if not openai_api_key:
+        print("Please set the OPENAI_API_KEY environment variable.")
+        return
+
+    try:
+        speech_response = await aspeech(
+            model="openai/tts-1",
+            voice="onyx",
+            input=input,
+            api_key=openai_api_key,
+        )
+        with open(audio_output_file, "wb") as f:
+            f.write(speech_response.content)
+    except Exception as e:
+        print(f"Error generating speech: {e}")
+
+
 if __name__ == "__main__":
     args = parse_arguments()
 
@@ -277,16 +296,18 @@ if __name__ == "__main__":
                 context = ""
             model = args.model or "ollama/qwen2.5-coder"
             api_key = None
+            conversation_history = [{"role": "system", "content": f"""You are a helpful AI assistant. You may use the following context to extend your knowledge in order to aid you to answer the question at the end. Use a Chain of Thought process to generate a response. If you don't know the answer, just say you don't know. Don't try to make up an answer. When providing code examples, always use markdown code block syntax with language specification.\n\nContext: {context}\n"""}]
         else:
             user_prompt = " ".join(args.prompt)
             model, api_key = select_provider(args)
             context = ""
+            conversation_history = [{"role": "system", "content": "You are a helpful AI assistant. When providing code examples, always use markdown code block syntax with language specification."}]
     except ValueError as e:
         print(f"Error: {e}")
         sys.exit(1)
 
     while True:
-        response, cost, code_blocks = get_ai_response(user_prompt, model, api_key, args.max_tokens, args.temperature, context)
+        response, cost, code_blocks, text_paragraphs = get_ai_response(user_prompt, model, api_key, args.max_tokens, args.temperature, conversation_history, context)
 
         if response:
             print(f"\nAI Response (model: {model} , cost: ${cost:.6f}):")
@@ -304,4 +325,25 @@ if __name__ == "__main__":
             else:
                 continue
         else:
+            if args.audio:
+                audio_output_file = Path(__file__).parent / "aiask_speech.mp3"
+                # Safely handle existing audio file
+                if audio_output_file.exists():
+                    backup_filename = f"{audio_output_file}.bak"
+                    if Path(backup_filename).exists():
+                        # Remove old backup if it exists
+                        Path(backup_filename).unlink()
+                    audio_output_file.rename(backup_filename)
+                    print(f"Created backup file: {backup_filename}")
+
+                print("Processing audio...")
+                asyncio.run(async_speech(" ".join(text_paragraphs), str(audio_output_file))) 
+                print("Audio processed!")
+                if args.play:
+                    try:
+                        sound = AudioSegment.from_file(str(audio_output_file))
+                        play(sound)
+                    except Exception as e:
+                        print(f"An unexpected error occurred while playing audio: {e}")
+
             sys.exit(0)

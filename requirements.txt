@@ -2,3 +2,4 @@ litellm
 openai
 pygments
 colorama
+pydub

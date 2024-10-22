@@ -1,6 +1,6 @@
 # aiask.py: Your Multi-Provider AI-Powered Copilot
 
-`aiask.py` is a simple, yet powerful command-line tool that leverages multiple AI providers to mimic the GitHub Copilot command-line tool. It now supports OpenAI, Anthropic, Google's Gemini, OpenRouter, Sambanova and Mistral.
+`aiask.py` is a simple, yet powerful command-line tool that leverages multiple AI providers to mimic the GitHub Copilot command-line tool. It now supports OpenAI, Anthropic, Google's Gemini, OpenRouter, Sambanova, Mistral as well as Ollama running locally.
 
 ## Features
 
@@ -10,11 +10,13 @@
 * Uses `litellm` for easy interaction with different AI APIs.
 * Allows customization of response length and creativity through command-line options.
 * Displays the cost of each API request, helping you track usage and expenses.
+* Generates and plays audio responses using OpenAI's text-to-speech API.
 
 ## Requirements
 
 * Python 3.7 or higher
 * API keys for the AI providers you want to use
+* `pydub` might require `ffmpeg` to be installed
 
 ## Setup
 
@@ -48,14 +50,17 @@
 You can now specify which AI provider to use with command-line options, as well as customize the response:
 
 ```bash
-aiask [--openai|--anthropic|--gemini|--openrouter|--sambanova|--mistral] [--save-code] [--max-tokens MAX_TOKENS] [--temperature TEMPERATURE] [--wd WORKING_DIRECTORY] 'Your question here'
+aiask [--openai|--anthropic|--gemini|--openrouter|--sambanova|--mistral|--ollama] [--model MODEL] [--save-code] [--max-tokens MAX_TOKENS] [--temperature TEMPERATURE] [--wd WORKING_DIRECTORY] [--audio] [--play] 'Your question here'
 ```
 
 - If no provider is specified, the script will use the first available API key in the order: OpenAI, Anthropic, Gemini, OpenRouter, Sambanova.
+- `--model`: Will override the default model used for the choosen provider.
 - `--save-code`: In case program code is returned, prompt for a filename where to save the code.
 - `--max-tokens`: Set the maximum number of tokens in the response (default: 500).
 - `--temperature`: Set the temperature for response generation, controlling creativity (default: 0.2, range: 0.0 to 1.0).
 - `--wd`: Set the working directory for the command. i.e where files will be stored (default: current directory).
+- `--audio`: Generates an audio file of the AI's response using OpenAI's text-to-speech API.  Requires an OpenAI API key. The audio file will be saved as `aiask_speech.mp3` in the same directory as `aiask.py`.
+- `--play`: Plays the generated audio file.  Uses `pydub`.
 
 ## Examples
 
@@ -100,6 +105,11 @@ aiask [--openai|--anthropic|--gemini|--openrouter|--sambanova|--mistral] [--save
    From simple scripts to complex schemes,
    Coding brings life to our dreams.
 
+   ```
+
+4. Generating and playing audio:
+   ```bash
+   ❯ aiask --openai --audio --play "What is the meaning of life?"
    ```
 
 Syntax highlighting is supported for code blocks in the responses as well as the possibility to save the code to file.

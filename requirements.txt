@@ -3,3 +3,4 @@ openai
 pygments
 colorama
 pydub
+PyPDF2

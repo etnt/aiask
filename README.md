@@ -50,11 +50,12 @@
 You can now specify which AI provider to use with command-line options, as well as customize the response:
 
 ```bash
-aiask [--openai|--anthropic|--gemini|--openrouter|--sambanova|--mistral|--ollama] [--model MODEL] [--save-code] [--max-tokens MAX_TOKENS] [--temperature TEMPERATURE] [--wd WORKING_DIRECTORY] [--audio] [--play] 'Your question here'
+aiask [--openai|--anthropic|--gemini|--openrouter|--sambanova|--mistral|--ollama] [--model MODEL] [--file FILE] [--save-code] [--max-tokens MAX_TOKENS] [--temperature TEMPERATURE] [--wd WORKING_DIRECTORY] [--audio] [--play] 'Your question here'
 ```
 
 - If no provider is specified, the script will use the first available API key in the order: OpenAI, Anthropic, Gemini, OpenRouter, Sambanova.
 - `--model`: Will override the default model used for the choosen provider.
+- `--file`: If provided, the script will read the content of the file and append it to the question. Hence it is possible to ask queries about the content of a file.
 - `--save-code`: In case program code is returned, prompt for a filename where to save the code.
 - `--max-tokens`: Set the maximum number of tokens in the response (default: 500).
 - `--temperature`: Set the temperature for response generation, controlling creativity (default: 0.2, range: 0.0 to 1.0).

@@ -252,8 +252,6 @@ def save_code_to_file(code_blocks, working_directory="."):
     print(f"Code has been saved to {full_filename}")
 
 
-
-
 async def async_speech(input, audio_output_file):
     openai_api_key = os.getenv("OPENAI_API_KEY")
 
@@ -304,6 +302,7 @@ if __name__ == "__main__":
                 if os.path.isfile(input_path):
                     if input_path.endswith(".pdf"):
                         context = extract_text_from_pdf(input_path)
+                        print(f"Extracted text from PDF: {context}...")
                     else:
                         with open(input_path, 'r') as f:
                             context = f.read().strip()
@@ -333,32 +332,32 @@ if __name__ == "__main__":
         else:
             print("No response could be generated.")
 
+        if args.audio:
+            audio_output_file = Path(__file__).parent / "aiask_speech.mp3"
+            # Safely handle existing audio file
+            if audio_output_file.exists():
+                backup_filename = f"{audio_output_file}.bak"
+                if Path(backup_filename).exists():
+                    # Remove old backup if it exists
+                    Path(backup_filename).unlink()
+                audio_output_file.rename(backup_filename)
+                print(f"Created backup file: {backup_filename}")
+
+            print("Processing audio...")
+            asyncio.run(async_speech(" ".join(text_paragraphs), str(audio_output_file))) 
+            print("Audio processed!")
+            if args.play:
+                try:
+                    sound = AudioSegment.from_file(str(audio_output_file))
+                    play(sound)
+                except Exception as e:
+                    print(f"An unexpected error occurred while playing audio: {e}")
+
         if args.ollama:
             user_prompt = input("Enter another question (or 'quit' to exit): ")
             if user_prompt.lower().strip() == 'quit':
                 sys.exit(0)
             else:
                 continue
-        else:
-            if args.audio:
-                audio_output_file = Path(__file__).parent / "aiask_speech.mp3"
-                # Safely handle existing audio file
-                if audio_output_file.exists():
-                    backup_filename = f"{audio_output_file}.bak"
-                    if Path(backup_filename).exists():
-                        # Remove old backup if it exists
-                        Path(backup_filename).unlink()
-                    audio_output_file.rename(backup_filename)
-                    print(f"Created backup file: {backup_filename}")
-
-                print("Processing audio...")
-                asyncio.run(async_speech(" ".join(text_paragraphs), str(audio_output_file))) 
-                print("Audio processed!")
-                if args.play:
-                    try:
-                        sound = AudioSegment.from_file(str(audio_output_file))
-                        play(sound)
-                    except Exception as e:
-                        print(f"An unexpected error occurred while playing audio: {e}")
 
             sys.exit(0)

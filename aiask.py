@@ -360,4 +360,4 @@ if __name__ == "__main__":
             else:
                 continue
 
-            sys.exit(0)
+        sys.exit(0)

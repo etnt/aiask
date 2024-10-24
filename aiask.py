@@ -176,7 +176,11 @@ def format_response(response):
     except Exception as e: #catch other unexpected errors
         ai_response = f"An error occurred: {e}"
 
-    return format_code_blocks(ai_response)
+    # Extract code blocks
+    code_blocks = re.findall(r'```(\w+)?\n(.*?)\n```', ai_response, re.DOTALL)
+    text_paragraphs = re.findall(r'(?s)(?!```)(.*?)(?=\n```|\Z)', ai_response) 
+
+    return code_blocks, text_paragraphs, format_code_blocks(ai_response)
 
 def get_ai_response(prompt, model, api_key, max_tokens, temperature, conversation_history, context):
     """Gets a response from the AI based on the given prompt."""
@@ -207,7 +211,7 @@ def get_ai_response(prompt, model, api_key, max_tokens, temperature, conversatio
         # Stop the spinner
         spinner.stop()
 
-        formatted_response = format_response(response)
+        code_blocks, text_paragraphs, formatted_response = format_response(response)
 
         # Extract cost information
         cost = response._hidden_params.get("response_cost", 0.0)
@@ -216,11 +220,6 @@ def get_ai_response(prompt, model, api_key, max_tokens, temperature, conversatio
 
         # Clear the spinner line
         print('\r' + ' ' * 80 + '\r', end='', flush=True)
-
-        # Extract code blocks
-        code_blocks = re.findall(r'```(\w+)?\n(.*?)\n```', formatted_response, re.DOTALL)
-        text_paragraphs = re.findall(r'(?s)(?!```)(.*?)(?=\n```|\Z)', formatted_response) 
-
 
         # Append AI response to conversation history
         conversation_history.append({"role": "assistant", "content": formatted_response})

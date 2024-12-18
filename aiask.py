@@ -297,7 +297,9 @@ if __name__ == "__main__":
             context = ""
             # If we have an input file to be usead as context, read it!
             if args.file:
-                input_path = args.file
+                # If the path is absolute (starts with /), use it directly
+                # Otherwise, join it with the working directory
+                input_path = args.file if args.file.startswith('/') else os.path.join(args.wd, args.file)
                 if os.path.isfile(input_path):
                     if input_path.endswith(".pdf"):
                         context = extract_text_from_pdf(input_path)

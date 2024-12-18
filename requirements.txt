@@ -4,3 +4,4 @@ pygments
 colorama
 pydub
 PyPDF2
+audioop-lts

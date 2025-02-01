@@ -309,7 +309,7 @@ if __name__ == "__main__":
                             context = f.read().strip()
             # Setup the rest of the input to Ollama
             user_prompt = " ".join(args.prompt)
-            model = args.model or "ollama/qwen2.5-coder"
+            model = args.model or "ollama/phi4:latest"
             api_key = None
             conversation_history = [{"role": "system", "content": f"""You are a helpful AI assistant. You may use the following context to extend your knowledge in order to aid you to answer the question at the end. Use a Chain of Thought process to generate a response. If you don't know the answer, just say you don't know. Don't try to make up an answer. When providing code examples, always use markdown code block syntax with language specification.\n\nContext: {context}\n"""}]
         else:
